@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>ROS3DJS Point Cloud Viewer</title>
+  <!-- Include the ROS3DJS and ROSLIBJS libraries -->
+  <script type="text/javascript" src="https://cdn.robotwebtools.org/EventEmitter2/current/eventemitter2.min.js"></script>
+  <script type="text/javascript" src="https://cdn.robotwebtools.org/roslibjs/current/roslib.min.js"></script>
+  <script type="text/javascript" src="https://cdn.robotwebtools.org/ros3djs/current/ros3d.min.js"></script>
+</head>
+<body>
+  <!-- Create a div to hold the point cloud viewer -->
+  <div id="viewer"></div>
+
+  <script type="text/javascript">
+    // Create a ROSLIBJS ROS instance
+    var ros = new ROSLIB.Ros({
+      url: 'ws://localhost:9090'
+    });
+
+    // Create a PointCloud2 visualization object with a specified size
+    var cloud = new ROS3D.PointCloud2({
+      ros: ros,
+      topic: '/pointcloud_topic',
+      size: 0.05 // Set the point size to 0.05 meters
+    });
+
+    var cloudTimeout = null;
+    var cloudLifetime = 10; // Set the cloud lifetime to 10 seconds
+
+    function updateCloud() {
+      // Remove the old point cloud data
+      cloud.removeChild(cloud.children[0]);
+      // Schedule the next update
+      cloudTimeout = setTimeout(updateCloud, cloudLifetime * 1000);
+    }
+
+    cloud.subscribe(function(msg) {
+      // Add the new point cloud data
+      cloud.addMessage(msg);
+      // Remove the old point cloud data after the specified lifetime
+      clearTimeout(cloudTimeout);
+      cloudTimeout = setTimeout(updateCloud, cloudLifetime * 1000);
+    });
+
+    // Add the point cloud viewer to the page
+    var viewer = new ROS3D.Viewer({
+      divID: 'viewer',
+      width: window.innerWidth,
+      height: window.innerHeight,
+      background: '#ffffff'
+    });
+    viewer.addObject(cloud);
+  </script>
+</body>
+</html>
